@@ -14,12 +14,15 @@ class GroundDetector:
         return self.ground_plane.contains(point, self.closeness_delta)
 
     def get_ground_plane(self, data):
+        """Simple implementation of RANSAC algorithm, subject to necessary conditions
+           for a "ground-like" plane"""
         max_points_fit = 0
         best_plane = None
         num_trials = 0
         while num_trials < self.n_ransac_trials:
             # three random points
             p1, p2, p3 = [data[random.randrange(np.shape(data)[0])] for _ in range(3)]
+           
             if not all(p[2]<self.max_height for p in [p1, p2, p3]):
                 # plane are too high
                 continue
