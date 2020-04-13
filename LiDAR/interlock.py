@@ -1,5 +1,3 @@
-import numpy as np
-
 ###### parameters, in meters, tuned for 1/10-scale remote-controlled car ######
 
 min_dist_away = 1 # defines what's too close for a lidar point
@@ -52,7 +50,7 @@ def interlock(certificate):
         return  distance_wanted/mag*pt[1], \
                 distance_wanted/mag*pt[2]
 
-    flat_pts = np.array([projected_flattened_pt(row) for row in pts])
+    flat_pts = [projected_flattened_pt(row) for row in pts]
 
     # 2. identify rows of data
     data = {} # maps height (from ground) to the "row" (scan) list 
@@ -71,7 +69,7 @@ def interlock(certificate):
 
     #4. check each row has enough x-density of points
     for _, subdata in data.items():
-        subdata = sorted(np.array(subdata))
+        subdata = sorted(subdata)
         for pt1, pt2 in zip(subdata, subdata[1:]):
             if pt1[0] < lane_left or pt2[0] > lane_right: 
                 # outside the lane
