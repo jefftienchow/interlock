@@ -1,30 +1,25 @@
 import numpy as np
 
+from conformance import correlate
+from geometric import geometric
 from lanefilter import LaneFilter
-from conv import convolve
-from shape import shape
 
 SCALE_FACTOR = .5
 _PATH_SIZE = 192.0
-_PATH_XD = np.arange(192.0)
+_PATH_Y = np.arange(192.0)
 
 def get_binary(img, thresholds):
     """
     Applies transformations to process the given image
-    :param img: the given image
-    :param birds_eye: the bird's eye transformation object
-    :param thresholds: thresholds used for vision filters
-    :return: the processed image
     """
     lane_filter = LaneFilter(thresholds)
     binary = lane_filter.apply(img)
     return binary.astype(np.uint8)
 
-def draw_lines(img, uv_model_dots):
-    for i, j  in ((-1, 0), (0, -1), (0, 0), (0, 1), (1, 0)): # makes it look like stars
-        img[uv_model_dots[:, 1] + i, uv_model_dots[:, 0] + j] = (0, 255,0) 
-
 def warp_points(pt_s, warp_matrix):
+    '''
+    uses the warp_matrix to transform points
+    '''
     # pt_s are the source points, nxm array.
     pt_d = np.dot(warp_matrix[:, :-1], pt_s.T) + warp_matrix[:, -1, None]
 
@@ -32,40 +27,50 @@ def warp_points(pt_s, warp_matrix):
     return (pt_d[:-1, :] / pt_d[-1, :]).T
 
 def get_pts(img, path, calibration):
-
-    uv_model_real = warp_points(np.column_stack((_PATH_XD, path)), calibration)
+    '''
+    converts points given from the top-down view to points in the camera view
+    '''
+    uv_model_real = warp_points(np.column_stack((_PATH_Y, path)), calibration)
     uv_model = np.round(uv_model_real).astype(int)
-    uv_model_dots = uv_model[np.logical_and.reduce((np.all(  # pylint: disable=no-member
+
+    # keep points that are within frame
+    uv_model_dots = uv_model[np.logical_and.reduce((np.all(  
         uv_model > 0, axis=1), uv_model[:, 0] < img.shape[1]/SCALE_FACTOR - 1, uv_model[:, 1] <
                                                     img.shape[0]/SCALE_FACTOR - 1))]
     return uv_model_dots
 
-def interlock(img, lines, calibration, thresholds):
+def get_transformed_fit(binary, fit, calibration, img):
     '''
-    runs the actual vision interlock; the parameters are the components that create the `certificate`
-    :param img: image from the controller
-    :param birds_eye: bird's eye transformation object from the controller
-    :param thresholds: thresholds used for vision filters
+    gets the lane line polynomials in the camera's view
+    '''
+    p = np.poly1d(fit)
+    xpts = p(_PATH_Y)
+    transformed_pts = (get_pts(binary, xpts, calibration) * SCALE_FACTOR).astype(int)
+    transformed_fit = np.polyfit(transformed_pts[:,1], transformed_pts[:,0], 2) # :,1 is the y axis
+    return transformed_fit 
+
+def interlock(img, left_fit, right_fit, calibration, thresholds):
+    '''
+    runs the actual vision interlock; the parameters are the components that form the `certificate`
+    :param img: image from the sensors
     :param lines: proposed lane lines
-    :return: the result of each vision interlock test
+    :param thresholds: thresholds used for vision filters
+    :param left_fit: polynomial for left lane line
+    :param right_fit: polynomial for right lane line
+    :return: the results of each vision interlock test
     '''
-    wb = get_binary(img, thresholds)
+    binary = get_binary(img, thresholds)
 
-    left_fit = np.polyfit(_PATH_XD, lines[0],2)
-    right_fit = np.polyfit(_PATH_XD, lines[1],2)
+    # perform geometric test
+    geometric_result = geometric(left_fit, right_fit, _PATH_SIZE)
 
-    left_pts = (get_pts(img, lines[0], calibration) * SCALE_FACTOR).astype(int)
-    right_pts = (get_pts(img, lines[1], calibration) * SCALE_FACTOR).astype(int)
+    left_transformed_fit = get_transformed_fit(binary, left_fit, calibration, img)
+    right_transformed_fit = get_transformed_fit(binary, right_fit, calibration, img)
 
-    draw_lines(img, left_pts)
-    draw_lines(img, right_pts)
+    # perform conformance test on left and right side of image
+    half_width = img.shape[1]//2
+    right_transformed_fit[2] -= half_width
+    left_result = correlate(left_transformed_fit, binary[:, :half_width])
+    right_result = correlate(right_transformed_fit, binary[:, half_width:])
 
-    shape_result = shape(left_fit, right_fit, _PATH_SIZE)
-
-    left_trans_fit = np.polyfit(left_pts[:,1], left_pts[:,0], 2) # :,1 is the y axis
-    right_trans_fit = np.polyfit(right_pts[:,1], right_pts[:,0], 2)
-
-    left_result = convolve(True, left_trans_fit, wb)
-    right_result = convolve(False, right_trans_fit, wb)
-
-    return shape_result, left_result, right_result
+    return geometric_result, left_result, right_result

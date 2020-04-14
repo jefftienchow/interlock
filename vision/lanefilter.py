@@ -1,11 +1,18 @@
 import cv2 
 import numpy as np
-from helpers import roi, scale_abs
+
+def scale_abs(x, m = 255):
+  '''
+  scales array to be in range 0 to m
+  '''
+  x = np.absolute(x)
+  x = np.uint8(float(m) * x/ float(np.max(x)))
+  return x 
 
 class LaneFilter:
   def __init__(self, p):
     self.sat_thresh = p['sat_thresh']
-    self.light_thresh = p['light_thresh'] 
+    self.light_thresh = p['light_thresh']
     self.light_thresh_agr = p['light_thresh_agr']
     self.grad_min, self.grad_max = p['grad_thresh']
     self.mag_thresh, self.x_thresh = p['mag_thresh'], p['x_thresh']
@@ -14,6 +21,9 @@ class LaneFilter:
     self.sobel_cond1, self.sobel_cond2, self.sobel_cond3 = None, None, None
 
   def apply(self, rgb_image):    
+    '''
+    applies masks based on thresholds
+    '''
     self.hls = cv2.cvtColor(rgb_image, cv2.COLOR_RGB2HLS)
     self.l = self.hls[:, :, 1]
     self.s = self.hls[:, :, 2]
