@@ -1,6 +1,0 @@
-## LiDAR
-
-
-## Vision
-
-## Vision+LiDAR
