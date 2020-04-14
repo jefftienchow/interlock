@@ -14,16 +14,12 @@ def geometric(left_fit, right_fit, h):
     # ax**2 + bx + c
     la, lb, lc = left_fit
     ra, rb, rc = right_fit
-    x = np.arange(0, h - 1.0)
-    lxs = la * (x ** 2.0) + lb * x + lc
-    rxs = ra * (x ** 2.0) + rb * x + rc
-
-    leftpoints = lxs
-    rightpoints = rxs
-    x_coords = x
+    x_coords = np.arange(0, h - 1.0)
+    leftpoints = la * (x_coords ** 2.0) + lb * x_coords + lc
+    rightpoints = ra * (x_coords ** 2.0) + rb * x_coords + rc
 
     # check which point from right lane corresponds to the normal line created by left lane points
-    lnormalslope = -1/(2.0*la*x+lb)
+    lnormalslope = -1/(2.0*la*x_coords+lb)
     diffs = []
     for xcoord,ycoord, m in zip(x_coords, leftpoints, lnormalslope):
         b = ycoord - m*xcoord # slope intercept for normal line
@@ -32,7 +28,7 @@ def geometric(left_fit, right_fit, h):
         newa = ra
         newb = rb-m
         newc = rc-b
-        
+
         # solve quadratic equation and use the closest solution
         xsoln1 = int((-newb + math.sqrt(newb**2.0 - 4*newa*newc)) / (2.0 * newa))
         xsoln2 = int((-newb - math.sqrt(newb**2.0 - 4*newa*newc)) / (2.0 * newa))
