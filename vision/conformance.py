@@ -48,4 +48,4 @@ def correlate(fit, img):
     actual_x = image_x - offset
     expected_x = p(image_y)
 
-    return abs(actual_x - expected_x) < 10 and grad[result[0]][result[1]] > 800
+    return abs(actual_x - expected_x) < 17 and grad[result[0]][result[1]] > 600
