@@ -1,1 +1,0 @@
-The ground plane examples in this directory are visualizations of various ground plane results on the same lidar_data.yaml LiDAR scan. Each is shown in a different orientation. The ground planes may be slightly different in each, due to the nondeterminism of the RANSAC algorithm

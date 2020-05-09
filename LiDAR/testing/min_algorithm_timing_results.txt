@@ -1,0 +1,37 @@
+#### Without minimal certificate algorithm (MULTIPLE RUNS SHOWN)
+
+Controller said True # (really it said false, but to get a valid certificate, and so that the interlock would actually check the certificate, I forced it to True)
+0.007875204086303711s to call controller
+Interlock said False
+0.005435943603515625s to call interlock
+
+0.006498098373413086s to call controller
+Interlock said False
+0.0032677650451660156s to call interlock
+
+0.006822824478149414s to call controller
+Interlock said False
+0.003400087356567383s to call interlock
+
+0.0069692134857177734s to call controller
+Interlock said False
+0.003264188766479492s to call interlock
+
+#### With it  (MULTIPLE RUNS SHOWN)
+
+Controller said True # same as above
+0.01012420654296875s to call controller
+Interlock said False
+0.0006127357482910156s to call interlock
+
+0.010133028030395508s to call controller
+Interlock said False
+0.0008990764617919922s to call interlock
+
+0.01087188720703125s to call controller
+Interlock said False
+0.0007560253143310547s to call interlock
+
+0.009646177291870117s to call controller
+Interlock said False
+0.0005860328674316406s to call interlock
